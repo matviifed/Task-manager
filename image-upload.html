@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload - Task Management</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./image-upload.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo"><a href="./index.html" class="logo-link">TM</a></div>
+        <nav>
+            <a href="index.html">Tasks</a>
+            <a href="image-upload.html" class="active">Images</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </header>
+    <main>
+        <section class="upload-section">
+            <div class="upload-container">
+                <div class="upload-area" id="dropZone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Drag & Drop Images Here</h3>
+                    <p>or</p>
+                    <label for="fileInput" class="upload-btn">Choose Files</label>
+                    <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                </div>
+            </div>
+        </section>
+
+        <section class="images-section">
+            <div class="section-header">
+                <h2>Uploaded Images</h2>
+                <div class="view-controls">
+                    <button class="view-btn active" data-view="grid">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button class="view-btn" data-view="list">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="images-container grid-view" id="imagesContainer">
+                <!-- Images will be inserted here -->
+            </div>
+        </section>
+
+        <div id="imageModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <img id="modalImage" src="" alt="Preview">
+                <div class="image-details">
+                    <h3 id="imageName"></h3>
+                    <p id="imageSize"></p>
+                    <p id="uploadDate"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="image-upload.js"></script>
+</body>
+</html>

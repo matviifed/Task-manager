@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management Website</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo"><a href="./index.html" class="logo-link">TM</a></div>
+        <nav>
+            <a href="./image-upload.html">Image Uploader</a>
+            <a href="#whom">Whom</a>
+            <a href="#goals">Our Goals</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </header>
+    <main>
+        <section class="task-section">
+            <div class="task-input-section">
+                <input type="text" id="taskInput" placeholder="Task Title">
+                <input type="text" id="taskDescription" placeholder="Task Description">
+                <select id="taskPriority">
+                    <option value="low" class="priority-low">Low</option>
+                    <option value="medium" class="priority-medium">Medium</option>
+                    <option value="high" class="priority-high">High</option>
+                </select>
+                <input type="datetime-local" id="taskDeadline">
+                <button onclick="addTask()">Add Task</button>
+            </div>
+        </section>
+        <section class="board-section">
+            <button class="add-board-btn" onclick="addBoard()">Add New Board</button>
+            <div id="boardContainer" class="board-container">
+                <div class="board" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    <div class="board-header">
+                        <input type="text" value="To Do" oninput="renameBoard(this)">
+                        <button class="delete-btn" onclick="deleteBoard(this)">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                    <ul class="task-list" id="todoList"></ul>
+                </div>
+                <div class="board" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    <div class="board-header">
+                        <input type="text" value="In Progress" oninput="renameBoard(this)">
+                        <button class="delete-btn" onclick="deleteBoard(this)">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                    <ul class="task-list" id="inProgressList"></ul>
+                </div>
+                <div class="board" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    <div class="board-header">
+                        <input type="text" value="Completed" oninput="renameBoard(this)">
+                        <button class="delete-btn" onclick="deleteBoard(this)">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                    <ul class="task-list" id="completedList"></ul>
+                </div>
+            </div>
+        </section>
+        <section class="completed-tasks-section">
+            <div class="section-header">
+                <h2>Completed Tasks</h2>
+                <button class="clear-completed-btn" onclick="clearCompletedTasks()">
+                    <i class="fa fa-trash"></i> Clear All
+                </button>
+            </div>
+            <div class="completed-tasks-container" id="completedTasksContainer">
+             
+            </div>
+        </section>
+        <section class="whom-section block-section">
+            <div class="content">
+                <div class="text-column">
+                    <h2>For Whom?</h2>
+                    <p>This task management board is designed for teams and individuals looking to efficiently organize their tasks and projects.</p>
+                </div>
+                <div class="image-column">
+                    <img src="../diploma/imgs/for-whom.webp" alt="For Whom">
+                </div>
+            </div>
+        </section>
+        <section class="goals-section block-section">
+            <h2 class="section-title">Our Goals</h2>
+            <div class="slider-container">
+                <button class="slider-btn prev-btn" onclick="moveSlider(-1)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="slider-wrapper">
+                    <div class="slider" id="goalsSlider">
+                        <div class="slide">
+                            <div class="slide-content">
+                                <i class="fas fa-tasks slide-icon"></i>
+                                <h3>Task Organization</h3>
+                                <p>Efficiently organize and prioritize your tasks with our intuitive board system</p>
+                            </div>
+                        </div>
+                        <div class="slide">
+                            <div class="slide-content">
+                                <i class="fas fa-users slide-icon"></i>
+                                <h3>Team Collaboration</h3>
+                                <p>Seamlessly collaborate with your team members and track project progress</p>
+                            </div>
+                        </div>
+                        <div class="slide">
+                            <div class="slide-content">
+                                <i class="fas fa-chart-line slide-icon"></i>
+                                <h3>Productivity Boost</h3>
+                                <p>Enhance your productivity with clear task visualization and progress tracking</p>
+                            </div>
+                        </div>
+                        <div class="slide">
+                            <div class="slide-content">
+                                <i class="fas fa-clock slide-icon"></i>
+                                <h3>Time Management</h3>
+                                <p>Better manage your time with deadlines and priority indicators</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="slider-btn next-btn" onclick="moveSlider(1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="slider-dots" id="sliderDots">
+                
+            </div>
+        </section>
+        <div id="taskPopup" class="task-popup">
+            <div class="popup-content">
+                <span class="close-btn" onclick="closePopup()">&times;</span>
+                <h2 id="popupTitle"></h2>
+                <p id="popupDescription"></p>
+                <button class="delete-task-btn" onclick="deleteTask()">
+                    <i class="fa fa-trash"></i> Delete Task
+                </button>
+            </div>
+        </div>
+    </main>
+    <script src="script.js"></script>
+    <script src="./slider.js"></script>
+</body>
+</html>
