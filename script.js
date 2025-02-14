@@ -1,46 +1,72 @@
-// Store for tasks and current task being edited
+
 let tasks = [];
 let currentTaskId = null;
 
-// Generate unique ID for tasks
+
 function generateId() {
     return '_' + Math.random().toString(36).substr(2, 9);
 }
 
-// Add new task
-function addTask() {
-    const title = document.getElementById('taskInput').value.trim();
-    const description = document.getElementById('taskDescription').value.trim();
-    const priority = document.getElementById('taskPriority').value;
-    const deadline = document.getElementById('taskDeadline').value;
+//Tasks scritps for creating, completing and deleting
+
+async function addTask() {
+    const title = document.getElementById("taskInput").value.trim();
+    const description = document.getElementById("taskDescription").value.trim();
+    const priority = document.getElementById("taskPriority").value;
+    const deadline = document.getElementById("taskDeadline").value;
 
     if (!title) {
-        alert('Please enter a task title');
+        alert("Please enter a task title");
         return;
     }
 
-    const task = {
-        id: generateId(),
-        title,
-        description,
-        priority,
-        deadline,
-        status: 'todo'
-    };
+    const taskData = { title, description, priority, deadline };
 
-    tasks.push(task);
-    renderTask(task);
-    clearInputs();
+    try {
+        const response = await fetch("http://localhost:5000/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(taskData),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to add task');
+        }
+
+        const newTask = await response.json();
+        tasks.push(newTask);
+        renderTask(newTask);
+        clearInputs();
+    } catch (error) {
+        console.error('Error adding task:', error);
+        alert('Failed to add task. Please try again.');
+    }
 }
 
-// Render single task
+
+function showTaskDetails(task) {
+    const popup = document.getElementById('taskPopup');
+    const title = document.getElementById('popupTitle');
+    const description = document.getElementById('popupDescription');
+
+    currentTaskId = task.id;
+    title.textContent = task.title;
+    description.textContent = task.description || 'No description provided';
+
+    popup.style.display = 'block';
+}
+
+function closePopup() {
+    document.getElementById('taskPopup').style.display = 'none';
+    currentTaskId = null;
+}
+
 function renderTask(task) {
     const taskElement = document.createElement('li');
     taskElement.className = `task-item priority-${task.priority}-border`;
     taskElement.draggable = true;
-    taskElement.id = task.id;
+    taskElement.id = task._id; 
     taskElement.onclick = (e) => {
-        // Prevent showing details when clicking action buttons
         if (!e.target.closest('.task-actions')) {
             showTaskDetails(task);
         }
@@ -60,10 +86,10 @@ function renderTask(task) {
             </span>
         </div>
         <div class="task-actions">
-            <button class="action-btn complete-btn" onclick="completeTask('${task.id}')">
+            <button class="action-btn complete-btn" onclick="completeTask('${task._id}')">
                 <i class="fas fa-check"></i>
             </button>
-            <button class="action-btn delete-btn" onclick="deleteTask('${task.id}')">
+            <button class="action-btn delete-btn" onclick="deleteTask('${task._id}')">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -73,30 +99,99 @@ function renderTask(task) {
     targetList.appendChild(taskElement);
 }
 
-// Complete task
-function completeTask(taskId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        task.completed = true;
-        task.completedDate = new Date();
-        
-        // Remove from board
-        const taskElement = document.getElementById(taskId);
-        taskElement.remove();
-        
-        // Add to completed section
-        renderCompletedTask(task);
-        
-        // Update tasks array
-        tasks = tasks.filter(t => t.id !== taskId);
+async function completeTask(taskId) {
+    const task = tasks.find(t => t._id === taskId);
+    if (!task) return;
+
+    const completedTask = {
+        id: task._id, 
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        deadline: task.deadline
+    };
+
+    await fetch("http://localhost:5000/completed-tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(completedTask),
+    });
+
+
+    document.getElementById(taskId).remove();
+    tasks = tasks.filter(t => t._id !== taskId);
+
+    fetchCompletedTasks();
+}
+
+async function deleteTask(taskId) {
+    if (!taskId && currentTaskId) {
+        taskId = currentTaskId;
+    }
+    
+    if (confirm("Are you sure you want to delete this task?")) {
+        try {
+            const response = await fetch(`http://localhost:5000/tasks/${taskId}`, { 
+                method: "DELETE" 
+            });
+            
+            if (response.ok) {
+                document.getElementById(taskId)?.remove();
+                tasks = tasks.filter(task => task._id !== taskId);
+                closePopup();
+            } else {
+                console.error('Failed to delete task');
+            }
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        }
     }
 }
 
-// Render completed task
+async function deleteCompletedTask(taskId) {
+    if (confirm("Are you sure you want to delete this completed task?")) {
+        await fetch(`http://localhost:5000/completed-tasks/${taskId}`, { method: "DELETE" });
+        fetchCompletedTasks(); 
+    }
+}
+
+async function clearCompletedTasks() {
+    if (confirm("Are you sure you want to clear all completed tasks?")) {
+        await fetch("http://localhost:5000/completed-tasks", { method: "DELETE" });
+        fetchCompletedTasks(); 
+    }
+}
+
+async function fetchTasks() {
+    const response = await fetch("http://localhost:5000/tasks");
+    const data = await response.json();
+
+    tasks = data; 
+    const todoList = document.getElementById("todoList");
+    todoList.innerHTML = ""; 
+
+    tasks.forEach(task => renderTask(task));
+}
+
+
+document.addEventListener("DOMContentLoaded", fetchTasks);
+
+async function fetchCompletedTasks() {
+    const response = await fetch("http://localhost:5000/completed-tasks");
+    const completedTasks = await response.json();
+    
+    const completedContainer = document.getElementById("completedTasksContainer");
+    completedContainer.innerHTML = ""; 
+
+    completedTasks.forEach(task => renderCompletedTask(task));
+}
+
+document.addEventListener("DOMContentLoaded", fetchCompletedTasks);
+
 function renderCompletedTask(task) {
-    const completedContainer = document.getElementById('completedTasksContainer');
-    const taskElement = document.createElement('div');
-    taskElement.className = 'completed-task-item';
+    const completedContainer = document.getElementById("completedTasksContainer");
+    const taskElement = document.createElement("div");
+    taskElement.className = "completed-task-item";
     
     taskElement.innerHTML = `
         <h3 class="task-title">${task.title}</h3>
@@ -106,45 +201,51 @@ function renderCompletedTask(task) {
             </span>
         </div>
         <div class="completion-date">
-            Completed on ${task.completedDate.toLocaleDateString()}
+            Completed on ${new Date(task.completedDate).toLocaleDateString()}
         </div>
-        <button class="action-btn delete-btn" onclick="deleteCompletedTask(this)">
+        <button class="action-btn delete-btn" onclick="deleteCompletedTask('${task._id}')">
             <i class="fas fa-trash"></i>
         </button>
     `;
-    
+
     completedContainer.appendChild(taskElement);
 }
 
-// Delete task (updated)
-function deleteTask(taskId) {
-    if (confirm('Are you sure you want to delete this task?')) {
-        const taskElement = document.getElementById(taskId);
-        if (taskElement) {
-            taskElement.remove();
-            tasks = tasks.filter(task => task.id !== taskId);
-        }
-        closePopup();
+
+//Scripts for adding and deleting boards
+
+function addBoard() {
+    const boardContainer = document.getElementById('boardContainer');
+    const boardId = generateId(); 
+    const board = document.createElement('div');
+    board.className = 'board';
+    board.setAttribute('ondrop', 'drop(event)');
+    board.setAttribute('ondragover', 'allowDrop(event)');
+
+    board.innerHTML = `
+        <div class="board-header">
+            <input type="text" value="New Board" oninput="renameBoard(this)">
+            <button class="delete-btn" onclick="deleteBoard(this)">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
+        <ul class="task-list"></ul>
+    `;
+
+    boardContainer.appendChild(board);
+}
+
+
+function deleteBoard(button) {
+    const board = button.closest('.board');
+    if (board && confirm('Are you sure you want to delete this board?')) {
+        board.remove();
     }
 }
 
-// Delete completed task
-function deleteCompletedTask(button) {
-    if (confirm('Are you sure you want to delete this completed task?')) {
-        const taskElement = button.closest('.completed-task-item');
-        taskElement.remove();
-    }
-}
 
-// Clear all completed tasks
-function clearCompletedTasks() {
-    if (confirm('Are you sure you want to clear all completed tasks?')) {
-        const completedContainer = document.getElementById('completedTasksContainer');
-        completedContainer.innerHTML = '';
-    }
-}
+//Scripts for drag and drop
 
-// Drag and Drop functions
 function allowDrop(ev) {
     ev.preventDefault();
     const board = ev.target.closest('.board');
@@ -171,17 +272,26 @@ function drop(ev) {
     
     taskList.appendChild(draggedElement);
     
-    // Update task status in data store
+
     const task = tasks.find(t => t.id === data);
     if (task) {
         task.status = board.querySelector('input').value.toLowerCase().replace(/\s+/g, '');
     }
 }
 
-// Close popup when clicking outside
+
 window.onclick = function(event) {
     const popup = document.getElementById('taskPopup');
     if (event.target === popup) {
         closePopup();
     }
+}
+
+//Additional script to clear inputs
+
+function clearInputs() {
+    document.getElementById("taskInput").value = "";
+    document.getElementById("taskDescription").value = "";
+    document.getElementById("taskPriority").value = "low";
+    document.getElementById("taskDeadline").value = "";
 }
