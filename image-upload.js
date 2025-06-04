@@ -1,126 +1,160 @@
-// Store for uploaded images
 let uploadedImages = [];
 
-// Setup event listeners
 document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
-    const viewButtons = document.querySelectorAll('.view-btn');
-    const modal = document.getElementById('imageModal');
-    const closeBtn = modal.querySelector('.close-btn');
+    const imagesContainer = document.getElementById('imagesContainer');
 
-    // Drag and drop handlers
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
-        dropZone.classList.add('dragover');
+        dropZone.classList.add('highlight');
     });
 
     dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
+        dropZone.classList.remove('highlight');
     });
 
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
-        dropZone.classList.remove('dragover');
+        dropZone.classList.remove('highlight');
         handleFiles(e.dataTransfer.files);
     });
 
-    // File input handler
     fileInput.addEventListener('change', (e) => {
         handleFiles(e.target.files);
     });
 
-    // View toggle handlers
-    viewButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const view = button.dataset.view;
-            toggleView(view);
-            viewButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-        });
-    });
-
-    // Modal handlers
-    closeBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
-
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
+    fetchImages();
 });
 
-// Handle uploaded files
+async function fetchImages() {
+    try {
+        const response = await fetch('http://localhost:5000/images');
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+        const images = await response.json();
+        console.log("Fetched images:", images); // Debugging log
+
+        images.forEach(image => {
+            const imageData = {
+                id: image._id,
+                name: image.filename,
+                src: `http://localhost:5000${image.path}`, 
+                date: new Date(image.uploadDate).toLocaleDateString()
+            };
+            console.log("Rendering image:", imageData); // Debugging log
+
+            uploadedImages.push(imageData);
+            renderImage(imageData);
+        });
+    } catch (error) {
+        console.error('Error fetching images:', error);
+    }
+}
+
 function handleFiles(files) {
     Array.from(files).forEach(file => {
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
-            
+
             reader.onload = (e) => {
                 const image = {
                     id: Date.now(),
                     name: file.name,
-                    size: formatSize(file.size),
-                    date: new Date().toLocaleDateString(),
-                    src: e.target.result
+                    src: e.target.result,
+                    file: file
                 };
-                
+
                 uploadedImages.push(image);
                 renderImage(image);
+                uploadImageToServer(image);
             };
-            
+
             reader.readAsDataURL(file);
+        } else {
+            alert('Only image files are allowed!');
         }
     });
 }
 
-// Render image card
 function renderImage(image) {
     const container = document.getElementById('imagesContainer');
-    const card = document.createElement('div');
-    card.className = 'image-card';
-    card.onclick = () => showImageDetails(image);
-    
-    card.innerHTML = `
-        <img src="${image.src}" alt="${image.name}">
+    const imageElement = document.createElement('div');
+    imageElement.className = 'image-item';
+    imageElement.dataset.id = image.id;
+
+    imageElement.innerHTML = `
+        <div class="image-preview">
+            <img src="${image.src}" alt="${image.name}">
+        </div>
         <div class="image-info">
             <h4>${image.name}</h4>
-            <p>${image.size} • ${image.date}</p>
+            <p>${image.date}</p>
+            <button class="describe-btn" onclick="createDescription('${image.id}')">
+                <i class="fas fa-comment-alt"></i> Create Description
+            </button>
+            <div class="image-description" style="display: none;">
+                <h4>Description:</h4>
+                <p class="description-text">Not analyzed yet.</p>
+            </div>
         </div>
     `;
-    
-    container.insertBefore(card, container.firstChild);
+
+    container.insertBefore(imageElement, container.firstChild);
 }
 
-// Show image details in modal
-function showImageDetails(image) {
-    const modal = document.getElementById('imageModal');
-    const modalImage = document.getElementById('modalImage');
-    const imageName = document.getElementById('imageName');
-    const imageSize = document.getElementById('imageSize');
-    const uploadDate = document.getElementById('uploadDate');
-    
-    modalImage.src = image.src;
-    imageName.textContent = image.name;
-    imageSize.textContent = `Size: ${image.size}`;
-    uploadDate.textContent = `Uploaded: ${image.date}`;
-    
-    modal.style.display = 'block';
+function uploadImageToServer(image) {
+    const formData = new FormData();
+    formData.append('image', image.file);
+
+    fetch('http://localhost:5000/upload_image', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log("Image uploaded successfully:", data);
+        } else {
+            console.error("Error uploading image:", data.error);
+        }
+    })
+    .catch(error => console.error("Server error:", error));
 }
 
-// Toggle view (grid/list)
-function toggleView(view) {
-    const container = document.getElementById('imagesContainer');
-    container.className = `images-container ${view}-view`;
-}
 
-// Format file size
-function formatSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+function createDescription(imageId) {
+    const imageElement = document.querySelector(`.image-item[data-id="${imageId}"]`);
+    if (!imageElement) return;
+
+    const descriptionDiv = imageElement.querySelector('.image-description');
+    const descriptionText = imageElement.querySelector('.description-text');
+    const loadingIcon = document.createElement("span");
+
+    // Show loading state
+    descriptionDiv.style.display = "block";
+    descriptionText.textContent = "Analyzing...";
+    loadingIcon.className = "loading-icon"; // Add a CSS spinner
+    descriptionDiv.appendChild(loadingIcon);
+
+    fetch("http://localhost:5000/analyze_image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingIcon.remove(); // Remove loading icon
+
+        if (data.success) {
+            descriptionText.textContent = data.description;
+        } else {
+            descriptionText.textContent = "Error: " + (data.error || "Unknown issue");
+        }
+    })
+    .catch(error => {
+        loadingIcon.remove();
+        descriptionText.textContent = "Error analyzing image.";
+        console.error("Error:", error);
+    });
 }

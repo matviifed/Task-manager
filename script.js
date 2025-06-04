@@ -44,20 +44,35 @@ async function addTask() {
 }
 
 
+let currentTask = null;
+
 function showTaskDetails(task) {
     const popup = document.getElementById('taskPopup');
     const title = document.getElementById('popupTitle');
     const description = document.getElementById('popupDescription');
+    const tipsContainer = document.getElementById('tipsContainer');
+    const tipsContent = document.getElementById('tipsContent');
 
-    currentTaskId = task.id;
+    currentTask = task;
+    currentTaskId = task._id;
     title.textContent = task.title;
     description.textContent = task.description || 'No description provided';
+    
+    tipsContainer.style.display = 'none';
+    tipsContent.textContent = '';
 
     popup.style.display = 'block';
 }
 
 function closePopup() {
-    document.getElementById('taskPopup').style.display = 'none';
+    const popup = document.getElementById('taskPopup');
+    const tipsContainer = document.getElementById('tipsContainer');
+    const tipsContent = document.getElementById('tipsContent');
+    
+    popup.style.display = 'none';
+    tipsContainer.style.display = 'none';
+    tipsContent.textContent = '';
+    currentTask = null;
     currentTaskId = null;
 }
 
@@ -174,6 +189,8 @@ async function fetchTasks() {
 }
 
 
+
+
 document.addEventListener("DOMContentLoaded", fetchTasks);
 
 async function fetchCompletedTasks() {
@@ -211,6 +228,41 @@ function renderCompletedTask(task) {
     completedContainer.appendChild(taskElement);
 }
 
+
+async function getTaskTips() {
+    const tipsContainer = document.getElementById('tipsContainer');
+    const tipsContent = document.getElementById('tipsContent');
+    
+    if (!currentTask) return;
+
+    try {
+        tipsContainer.style.display = 'block';
+        tipsContent.innerHTML = '<div class="loading">Getting tips...</div>';
+
+        const response = await fetch('http://localhost:5000/tasks/tips', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: currentTask.title,
+                description: currentTask.description
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get tips');
+        }
+
+        const data = await response.json();
+        
+        tipsContainer.style.display = 'block';
+        tipsContent.textContent = data.tips;
+    } catch (error) {
+        console.error('Error getting tips:', error);
+        tipsContent.textContent = 'Failed to get tips. Please try again.';
+    }
+}
 
 //Scripts for adding and deleting boards
 

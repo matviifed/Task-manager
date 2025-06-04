@@ -136,6 +136,13 @@
                 <span class="close-btn" onclick="closePopup()">&times;</span>
                 <h2 id="popupTitle"></h2>
                 <p id="popupDescription"></p>
+                <button class="get-tips-btn" onclick="getTaskTips()">
+                    <i class="fas fa-lightbulb"></i> Get Tips
+                </button>
+                <div id="tipsContainer" style="display: none;">
+                    <h3>Tips for Completion:</h3>
+                    <div id="tipsContent"></div>
+                </div>
                 <button class="delete-task-btn" onclick="deleteTask()">
                     <i class="fa fa-trash"></i> Delete Task
                 </button>

@@ -185,3 +185,54 @@
     border-top: 1px solid #dfe1e6;
     margin-top: 1rem;
 }
+
+.image-preview img {
+    width: 200px; /* Adjust to desired size */
+    height: 200px;
+    object-fit: contain; /* Ensures the image is cropped nicely */
+    border-radius: 8px; /* Optional: adds rounded corners */
+}
+
+.image-description {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border-left: 3px solid #28a745;
+}
+
+.image-description h4 {
+    margin-top: 0;
+    color: #343a40;
+}
+
+.description-text {
+    margin-bottom: 0;
+    line-height: 1.5;
+}
+
+.action-btn.success {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Animation for the description to appear smoothly */
+.image-description {
+    transition: all 0.3s ease;
+}
+
+.loading-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ccc;
+    border-top: 2px solid #000;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
